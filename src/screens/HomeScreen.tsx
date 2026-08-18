@@ -21,7 +21,9 @@ export default function HomeScreen() {
   const loadMovies = async () => {
     try {
       const data = await getPopularMovies();
-      setMovies(data);
+
+      // TMDB returns movies inside the "results" array
+      setMovies(data.results || []);
     } catch (error) {
       console.error('Error loading movies:', error);
     } finally {
@@ -39,6 +41,7 @@ export default function HomeScreen() {
               : 'https://via.placeholder.com/300x450',
           }}
           style={styles.poster}
+          resizeMode="cover"
         />
 
         <Text style={styles.movieTitle} numberOfLines={2}>
@@ -46,7 +49,7 @@ export default function HomeScreen() {
         </Text>
 
         <Text style={styles.rating}>
-          ⭐ {item.vote_average?.toFixed(1)}
+          ⭐ {item.vote_average?.toFixed(1) || 'N/A'}
         </Text>
       </TouchableOpacity>
     );
@@ -66,14 +69,20 @@ export default function HomeScreen() {
       <Text style={styles.title}>🎬 Movie App</Text>
       <Text style={styles.subtitle}>Popular Movies</Text>
 
-      <FlatList
-        data={movies}
-        renderItem={renderMovie}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={2}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.movieList}
-      />
+      {movies.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No movies found.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={movies}
+          renderItem={renderMovie}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.movieList}
+        />
+      )}
     </View>
   );
 }
@@ -145,5 +154,16 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
   },
 });

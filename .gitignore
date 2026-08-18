@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -39,6 +40,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+<<<<<<< HEAD
 
 
 # Python / Django backend
@@ -61,3 +63,6 @@ htmlcov/
 
 # VS Code local settings (optional)
 # .vscode/
+=======
+MovieApp-Group3/.env
+

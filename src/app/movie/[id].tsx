@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import YoutubePlayer from "react-native-youtube-iframe";
+
 import {
   getMovieDetails,
   getMovieVideos,
@@ -24,7 +26,6 @@ export default function MovieDetailScreen() {
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [trailer, setTrailer] = useState<MovieVideo | null>(null);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -48,36 +49,31 @@ export default function MovieDetailScreen() {
         setMovie(movieData);
 
         const selectedTrailer =
-  // 1. Best choice: official YouTube trailer
-  videoData.results.find(
-    (video) =>
-      video.site === "YouTube" &&
-      video.type === "Trailer" &&
-      video.official === true
-  ) ||
-
-  // 2. Any YouTube trailer
-  videoData.results.find(
-    (video) =>
-      video.site === "YouTube" &&
-      video.type === "Trailer"
-  ) ||
-
-  // 3. Fallback: official teaser
-  videoData.results.find(
-    (video) =>
-      video.site === "YouTube" &&
-      video.type === "Teaser" &&
-      video.official === true
-  ) ||
-
-  // 4. Last fallback: any YouTube video
-  videoData.results.find(
-    (video) =>
-      video.site === "YouTube"
-  ) ||
-
-  null;
+          // Prefer official trailer
+          videoData.results.find(
+            (video) =>
+              video.site === "YouTube" &&
+              video.type === "Trailer" &&
+              video.official === true
+          ) ||
+          // Any trailer
+          videoData.results.find(
+            (video) =>
+              video.site === "YouTube" &&
+              video.type === "Trailer"
+          ) ||
+          // Official teaser
+          videoData.results.find(
+            (video) =>
+              video.site === "YouTube" &&
+              video.type === "Teaser" &&
+              video.official === true
+          ) ||
+          // Last available YouTube video
+          videoData.results.find(
+            (video) => video.site === "YouTube"
+          ) ||
+          null;
 
         setTrailer(selectedTrailer);
       } catch (err) {
@@ -101,7 +97,7 @@ export default function MovieDetailScreen() {
       <View style={styles.center}>
         <ActivityIndicator
           size="large"
-          color="#FFFFFF"
+          color="#3B82F6"
         />
 
         <Text style={styles.loadingText}>
@@ -119,7 +115,7 @@ export default function MovieDetailScreen() {
         </Text>
 
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.errorBackButton}
           onPress={() => router.back()}
         >
           <Text style={styles.backButtonText}>
@@ -135,95 +131,181 @@ export default function MovieDetailScreen() {
     "w500"
   );
 
+  const releaseYear = movie.release_date
+    ? movie.release_date.substring(0, 4)
+    : "Unknown";
+
   return (
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
+      {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.back()}
       >
+        <Ionicons
+          name="arrow-back"
+          size={20}
+          color="#FFFFFF"
+        />
+
         <Text style={styles.backButtonText}>
-          ← Back
+          Back
         </Text>
       </TouchableOpacity>
 
-      {posterUrl && (
+      {/* Movie Poster */}
+      {posterUrl ? (
         <Image
           source={{ uri: posterUrl }}
           style={styles.poster}
           resizeMode="cover"
         />
+      ) : (
+        <View style={styles.noPoster}>
+          <Ionicons
+            name="image-outline"
+            size={50}
+            color="#64748B"
+          />
+
+          <Text style={styles.noPosterText}>
+            No poster available
+          </Text>
+        </View>
       )}
 
       <View style={styles.content}>
+        {/* Movie Title */}
         <Text style={styles.title}>
           {movie.title}
         </Text>
 
-        <Text style={styles.rating}>
-          ⭐ {movie.vote_average.toFixed(1)}
-        </Text>
+        {/* Rating + Year */}
+        <View style={styles.mainMetaRow}>
+          <View style={styles.ratingBadge}>
+            <Ionicons
+              name="star"
+              size={17}
+              color="#FACC15"
+            />
 
-        <Text style={styles.info}>
-          Release Date:{" "}
-          {movie.release_date || "Unknown"}
-        </Text>
+            <Text style={styles.ratingText}>
+              {movie.vote_average.toFixed(1)}
+            </Text>
+          </View>
 
-        {movie.runtime && (
-          <Text style={styles.info}>
-            Runtime: {movie.runtime} minutes
-          </Text>
-        )}
+          <View style={styles.metaBadge}>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color="#CBD5E1"
+            />
 
+            <Text style={styles.metaBadgeText}>
+              {releaseYear}
+            </Text>
+          </View>
+
+          {movie.runtime ? (
+            <View style={styles.metaBadge}>
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color="#CBD5E1"
+              />
+
+              <Text style={styles.metaBadgeText}>
+                {movie.runtime} min
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Genres */}
         {movie.genres &&
           movie.genres.length > 0 && (
-            <Text style={styles.info}>
-              Genres:{" "}
-              {movie.genres
-                .map((genre) => genre.name)
-                .join(", ")}
-            </Text>
+            <View style={styles.genreContainer}>
+              {movie.genres.map((genre) => (
+                <View
+                  key={genre.id}
+                  style={styles.genreBadge}
+                >
+                  <Text style={styles.genreText}>
+                    {genre.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
           )}
 
+        {/* Trailer */}
         <Text style={styles.sectionTitle}>
-  Official Trailer
-</Text>
-{trailer ? (
-  <View style={styles.videoContainer}>
-    <YoutubePlayer
-      height={220}
-      videoId={trailer.key}
-      play={false}
-    />
-  </View>
-) : (
-  <View style={styles.noTrailer}>
-    <Text style={styles.noTrailerText}>
-      No trailer available for this movie.
-    </Text>
-  </View>
-)}
+          Official Trailer
+        </Text>
 
-<Text style={styles.sectionTitle}>
-  Overview
-</Text>
-       <TouchableOpacity
-  style={styles.castButton}
-  onPress={() => {
-    router.push({
-      pathname: "/cast/[id]",
-      params: {
-        id: movie.id.toString(),
-      },
-    });
-  }}
->
-  <Text style={styles.castButtonText}>
-    View Cast
-  </Text>
-</TouchableOpacity>
+        {trailer ? (
+          <View style={styles.videoContainer}>
+            <YoutubePlayer
+              height={220}
+              videoId={trailer.key}
+              play={false}
+            />
+          </View>
+        ) : (
+          <View style={styles.noTrailer}>
+            <Ionicons
+              name="videocam-off-outline"
+              size={35}
+              color="#64748B"
+            />
+
+            <Text style={styles.noTrailerText}>
+              No trailer available for this movie.
+            </Text>
+          </View>
+        )}
+
+        {/* Overview */}
+        <Text style={styles.sectionTitle}>
+          Overview
+        </Text>
+
+        <Text style={styles.overview}>
+          {movie.overview ||
+            "No overview available for this movie."}
+        </Text>
+
+        {/* View Cast */}
+        <TouchableOpacity
+          style={styles.castButton}
+          onPress={() => {
+            router.push({
+              pathname: "/cast/[id]",
+              params: {
+                id: movie.id.toString(),
+              },
+            });
+          }}
+        >
+          <Ionicons
+            name="people"
+            size={21}
+            color="#FFFFFF"
+          />
+
+          <Text style={styles.castButtonText}>
+            View Cast
+          </Text>
+
+          <Ionicons
+            name="chevron-forward"
+            size={21}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -245,7 +327,7 @@ const styles = StyleSheet.create({
 
   loadingText: {
     color: "#CBD5E1",
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 16,
   },
 
@@ -257,18 +339,28 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     alignSelf: "flex-start",
     backgroundColor: "#1E293B",
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
     margin: 15,
+    gap: 7,
+  },
+
+  errorBackButton: {
+    backgroundColor: "#2563EB",
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 10,
   },
 
   backButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
   },
 
   poster: {
@@ -277,51 +369,111 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E293B",
   },
 
+  noPoster: {
+    height: 400,
+    backgroundColor: "#1E293B",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  noPosterText: {
+    color: "#94A3B8",
+    marginTop: 10,
+  },
+
   content: {
     padding: 20,
   },
 
   title: {
     color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 29,
+    fontWeight: "800",
+    lineHeight: 36,
+    marginBottom: 14,
   },
 
-  rating: {
+  mainMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 16,
+  },
+
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E293B",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 5,
+  },
+
+  ratingText: {
     color: "#FACC15",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
+    fontSize: 14,
+    fontWeight: "700",
   },
 
-  info: {
+  metaBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E293B",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 5,
+  },
+
+  metaBadgeText: {
     color: "#CBD5E1",
-    fontSize: 15,
-    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  genreContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 5,
+  },
+
+  genreBadge: {
+    backgroundColor: "#1D4ED8",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+  },
+
+  genreText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   sectionTitle: {
     color: "#FFFFFF",
     fontSize: 22,
-    fontWeight: "bold",
-    marginTop: 24,
-    marginBottom: 10,
+    fontWeight: "800",
+    marginTop: 26,
+    marginBottom: 12,
   },
 
   videoContainer: {
     width: "100%",
     aspectRatio: 16 / 9,
     backgroundColor: "#000000",
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
   },
 
-  
   noTrailer: {
     backgroundColor: "#1E293B",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 14,
+    padding: 25,
+    justifyContent: "center",
     alignItems: "center",
   },
 
@@ -329,26 +481,33 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 15,
     textAlign: "center",
+    marginTop: 10,
   },
 
   overview: {
     color: "#CBD5E1",
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 25,
   },
 
   castButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "#2563EB",
     paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 25,
-    marginBottom: 30,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    marginTop: 28,
+    marginBottom: 35,
+    gap: 10,
   },
 
   castButtonText: {
+    flex: 1,
     color: "#FFFFFF",
     fontSize: 17,
-    fontWeight: "bold",
+    fontWeight: "700",
+    textAlign: "center",
   },
 });

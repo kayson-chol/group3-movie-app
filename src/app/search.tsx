@@ -8,18 +8,27 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 import MovieCard from "../components/MovieCard";
-import { Movie, searchMovies } from "../services/movieApi";
+import {
+  Movie,
+  searchMovies,
+} from "../services/movieApi";
 
 export default function SearchScreen() {
+  const router = useRouter();
+
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSearch = async () => {
-    if (!query.trim()) {
+    const cleanQuery = query.trim();
+
+    if (!cleanQuery) {
       setMovies([]);
       setError("Please enter a movie title.");
       return;
@@ -29,7 +38,7 @@ export default function SearchScreen() {
       setLoading(true);
       setError("");
 
-      const data = await searchMovies(query.trim());
+      const data = await searchMovies(cleanQuery);
 
       setMovies(data.results);
 
@@ -51,32 +60,83 @@ export default function SearchScreen() {
     }
   };
 
+  const openMovie = (movieId: number) => {
+    router.push({
+      pathname: "/movie/[id]",
+      params: {
+        id: movieId.toString(),
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Search Movies</Text>
+      <Text style={styles.title}>
+        Search Movies
+      </Text>
 
-      <View style={styles.searchRow}>
+      <Text style={styles.subtitle}>
+        Find movies by title
+      </Text>
+
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search"
+          size={21}
+          color="#94A3B8"
+        />
+
         <TextInput
           style={styles.input}
           placeholder="Search movie title..."
           placeholderTextColor="#94A3B8"
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(text) => {
+            setQuery(text);
+
+            if (error) {
+              setError("");
+            }
+          }}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
+          autoCapitalize="none"
         />
 
+        {query.length > 0 && (
+          <TouchableOpacity
+            onPress={() => {
+              setQuery("");
+              setMovies([]);
+              setError("");
+            }}
+          >
+            <Ionicons
+              name="close-circle"
+              size={21}
+              color="#94A3B8"
+            />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
-          style={styles.button}
+          style={styles.searchButton}
           onPress={handleSearch}
         >
-          <Text style={styles.buttonText}>Search</Text>
+          <Ionicons
+            name="search"
+            size={20}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
       </View>
 
       {loading && (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <ActivityIndicator
+            size="large"
+            color="#3B82F6"
+          />
 
           <Text style={styles.loadingText}>
             Searching for movies...
@@ -86,33 +146,48 @@ export default function SearchScreen() {
 
       {!loading && error !== "" && (
         <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      {!loading && error === "" && movies.length === 0 && (
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>
-            Search for a movie to get started.
+          <Text style={styles.errorText}>
+            {error}
           </Text>
         </View>
       )}
 
+      {!loading &&
+        error === "" &&
+        movies.length === 0 && (
+          <View style={styles.center}>
+            <Ionicons
+              name="film-outline"
+              size={50}
+              color="#475569"
+            />
+
+            <Text style={styles.emptyText}>
+              Search for a movie to get started.
+            </Text>
+          </View>
+        )}
+
       {!loading && movies.length > 0 && (
         <FlatList
           data={movies}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) =>
+            item.id.toString()
+          }
           numColumns={2}
-          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          columnWrapperStyle={styles.row}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
-            <MovieCard
-              movie={item}
-              onPress={() => {
-                console.log("Selected movie:", item.id);
-              }}
-            />
+            <View style={styles.cardWrapper}>
+              <MovieCard
+                movie={item}
+                onPress={() =>
+                  openMovie(item.id)
+                }
+              />
+            </View>
           )}
         />
       )}
@@ -124,74 +199,84 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0F172A",
-    paddingTop: 60,
-    paddingHorizontal: 15,
+    paddingTop: 55,
+    paddingHorizontal: 16,
   },
 
   title: {
     fontSize: 30,
-    fontWeight: "bold",
+    fontWeight: "800",
     color: "#FFFFFF",
+  },
+
+  subtitle: {
+    color: "#94A3B8",
+    fontSize: 15,
+    marginTop: 4,
     marginBottom: 20,
   },
 
-  searchRow: {
+  searchContainer: {
+    height: 52,
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#1E293B",
+    borderRadius: 14,
+    paddingLeft: 14,
     marginBottom: 20,
   },
 
   input: {
     flex: 1,
-    height: 50,
-    backgroundColor: "#1E293B",
-    borderRadius: 10,
-    paddingHorizontal: 15,
     color: "#FFFFFF",
     fontSize: 16,
-    marginRight: 10,
+    paddingHorizontal: 10,
   },
 
-  button: {
+  searchButton: {
+    height: 52,
+    width: 52,
     backgroundColor: "#2563EB",
-    paddingHorizontal: 15,
-    height: 50,
-    borderRadius: 10,
+    borderTopRightRadius: 14,
+    borderBottomRightRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "bold",
+    marginLeft: 8,
   },
 
   list: {
-    paddingBottom: 30,
+    paddingBottom: 100,
   },
 
   row: {
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: 14,
+  },
+
+  cardWrapper: {
+    flex: 1,
+    maxWidth: 190,
+    marginBottom: 18,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 25,
   },
 
   loadingText: {
     color: "#CBD5E1",
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: 12,
+    fontSize: 15,
   },
 
   emptyText: {
     color: "#94A3B8",
     fontSize: 16,
     textAlign: "center",
+    marginTop: 12,
   },
 
   errorText: {

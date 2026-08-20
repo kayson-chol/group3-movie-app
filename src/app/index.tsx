@@ -24,7 +24,6 @@ export default function HomeScreen() {
       setError("");
 
       const data = await getPopularMovies();
-
       setMovies(data.results);
     } catch (err) {
       console.error("Home movie error:", err);
@@ -44,24 +43,26 @@ export default function HomeScreen() {
   }, []);
 
   const openMovie = (movieId: number) => {
-    console.log("Opening movie:", movieId);
-
     router.push(`/movie/${movieId}`);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Movie App</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          Movie Explorer
+        </Text>
 
-      <Text style={styles.subtitle}>
-        Discover popular movies
-      </Text>
+        <Text style={styles.subtitle}>
+          Discover popular movies
+        </Text>
+      </View>
 
       {loading && (
         <View style={styles.center}>
           <ActivityIndicator
             size="large"
-            color="#FFFFFF"
+            color="#3B82F6"
           />
 
           <Text style={styles.loadingText}>
@@ -88,16 +89,22 @@ export default function HomeScreen() {
       {!loading && error === "" && (
         <FlatList
           data={movies}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) =>
+            item.id.toString()
+          }
           renderItem={({ item }) => (
-            <MovieCard
-              movie={item}
-              onPress={() => openMovie(item.id)}
-            />
+            <View style={styles.cardWrapper}>
+              <MovieCard
+                movie={item}
+                onPress={() =>
+                  openMovie(item.id)
+                }
+              />
+            </View>
           )}
           numColumns={2}
-          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          columnWrapperStyle={styles.row}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -109,41 +116,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0F172A",
-    paddingTop: 60,
-    paddingHorizontal: 15,
+    paddingTop: 55,
+    paddingHorizontal: 16,
   },
 
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 5,
-  },
-
-  subtitle: {
-    fontSize: 16,
-    color: "#CBD5E1",
+  header: {
     marginBottom: 20,
   },
 
+  title: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+
+  subtitle: {
+    fontSize: 15,
+    color: "#94A3B8",
+    marginTop: 4,
+  },
+
   list: {
-    paddingBottom: 30,
+    paddingBottom: 100,
   },
 
   row: {
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: 14,
+  },
+
+  cardWrapper: {
+    flex: 1,
+    maxWidth: 190,
+    marginBottom: 18,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 25,
   },
 
   loadingText: {
     color: "#CBD5E1",
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: 12,
+    fontSize: 15,
   },
 
   errorText: {
@@ -156,6 +174,6 @@ const styles = StyleSheet.create({
   retry: {
     color: "#60A5FA",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
 });

@@ -1,19 +1,39 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Movie, getPosterUrl } from "../services/movieApi";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import {
+  Movie,
+  getPosterUrl,
+} from "../services/movieApi";
 
 interface MovieCardProps {
   movie: Movie;
   onPress: () => void;
 }
 
-export default function MovieCard({ movie, onPress }: MovieCardProps) {
-  const posterUrl = getPosterUrl(movie.poster_path, "w342");
+export default function MovieCard({
+  movie,
+  onPress,
+}: MovieCardProps) {
+  const posterUrl = getPosterUrl(
+    movie.poster_path,
+    "w342"
+  );
+
+  const releaseYear = movie.release_date
+    ? movie.release_date.substring(0, 4)
+    : "Unknown";
 
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       {posterUrl ? (
         <Image
@@ -22,25 +42,35 @@ export default function MovieCard({ movie, onPress }: MovieCardProps) {
           resizeMode="cover"
         />
       ) : (
-        <View style={[styles.poster, styles.noPoster]}>
-          <Text style={styles.noPosterText}>No Image</Text>
+        <View
+          style={[
+            styles.poster,
+            styles.noPoster,
+          ]}
+        >
+          <Text style={styles.noPosterText}>
+            No Image
+          </Text>
         </View>
       )}
 
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
+        <Text
+          style={styles.title}
+          numberOfLines={2}
+        >
           {movie.title}
         </Text>
 
-        <Text style={styles.rating}>
-          ⭐ {movie.vote_average.toFixed(1)}
-        </Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.rating}>
+            ⭐ {movie.vote_average.toFixed(1)}
+          </Text>
 
-        <Text style={styles.year}>
-          {movie.release_date
-            ? movie.release_date.substring(0, 4)
-            : "Unknown"}
-        </Text>
+          <Text style={styles.year}>
+            {releaseYear}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -48,17 +78,15 @@ export default function MovieCard({ movie, onPress }: MovieCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 160,
-    marginRight: 15,
-    marginBottom: 20,
+    width: "100%",
     backgroundColor: "#1E293B",
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
   },
 
   poster: {
     width: "100%",
-    height: 230,
+    aspectRatio: 2 / 3,
     backgroundColor: "#334155",
   },
 
@@ -78,15 +106,23 @@ const styles = StyleSheet.create({
 
   title: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 6,
+    fontSize: 15,
+    fontWeight: "700",
+    lineHeight: 20,
+    minHeight: 40,
+    marginBottom: 8,
+  },
+
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   rating: {
     color: "#FACC15",
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   year: {

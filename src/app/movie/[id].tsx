@@ -9,11 +9,13 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-
+import YoutubePlayer from "react-native-youtube-iframe";
 import {
   getMovieDetails,
+  getMovieVideos,
   getPosterUrl,
   Movie,
+  MovieVideo,
 } from "../../services/movieApi";
 
 export default function MovieDetailScreen() {
@@ -21,6 +23,8 @@ export default function MovieDetailScreen() {
   const router = useRouter();
 
   const [movie, setMovie] = useState<Movie | null>(null);
+  const [trailer, setTrailer] = useState<MovieVideo | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,9 +40,46 @@ export default function MovieDetailScreen() {
           throw new Error("Invalid movie ID.");
         }
 
-        const data = await getMovieDetails(movieId);
+        const [movieData, videoData] = await Promise.all([
+          getMovieDetails(movieId),
+          getMovieVideos(movieId),
+        ]);
 
-        setMovie(data);
+        setMovie(movieData);
+
+        const selectedTrailer =
+  // 1. Best choice: official YouTube trailer
+  videoData.results.find(
+    (video) =>
+      video.site === "YouTube" &&
+      video.type === "Trailer" &&
+      video.official === true
+  ) ||
+
+  // 2. Any YouTube trailer
+  videoData.results.find(
+    (video) =>
+      video.site === "YouTube" &&
+      video.type === "Trailer"
+  ) ||
+
+  // 3. Fallback: official teaser
+  videoData.results.find(
+    (video) =>
+      video.site === "YouTube" &&
+      video.type === "Teaser" &&
+      video.official === true
+  ) ||
+
+  // 4. Last fallback: any YouTube video
+  videoData.results.find(
+    (video) =>
+      video.site === "YouTube"
+  ) ||
+
+  null;
+
+        setTrailer(selectedTrailer);
       } catch (err) {
         console.error("Movie details error:", err);
 
@@ -58,7 +99,10 @@ export default function MovieDetailScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
+        <ActivityIndicator
+          size="large"
+          color="#FFFFFF"
+        />
 
         <Text style={styles.loadingText}>
           Loading movie details...
@@ -144,24 +188,42 @@ export default function MovieDetailScreen() {
           )}
 
         <Text style={styles.sectionTitle}>
-          Overview
-        </Text>
+  Official Trailer
+</Text>
+{trailer ? (
+  <View style={styles.videoContainer}>
+    <YoutubePlayer
+      height={220}
+      videoId={trailer.key}
+      play={false}
+    />
+  </View>
+) : (
+  <View style={styles.noTrailer}>
+    <Text style={styles.noTrailerText}>
+      No trailer available for this movie.
+    </Text>
+  </View>
+)}
 
-        <Text style={styles.overview}>
-          {movie.overview ||
-            "No overview available."}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.castButton}
-          onPress={() => {
-            router.push(`/cast/${movie.id}`);
-          }}
-        >
-          <Text style={styles.castButtonText}>
-            View Cast
-          </Text>
-        </TouchableOpacity>
+<Text style={styles.sectionTitle}>
+  Overview
+</Text>
+       <TouchableOpacity
+  style={styles.castButton}
+  onPress={() => {
+    router.push({
+      pathname: "/cast/[id]",
+      params: {
+        id: movie.id.toString(),
+      },
+    });
+  }}
+>
+  <Text style={styles.castButtonText}>
+    View Cast
+  </Text>
+</TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -243,8 +305,30 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 22,
     fontWeight: "bold",
-    marginTop: 20,
+    marginTop: 24,
     marginBottom: 10,
+  },
+
+  videoContainer: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    backgroundColor: "#000000",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+
+  
+  noTrailer: {
+    backgroundColor: "#1E293B",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+  },
+
+  noTrailerText: {
+    color: "#94A3B8",
+    fontSize: 15,
+    textAlign: "center",
   },
 
   overview: {

@@ -38,6 +38,19 @@ export interface CastResponse {
   crew: any[];
 }
 
+export interface MovieVideo {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+  official: boolean;
+}
+
+export interface MovieVideoResponse {
+  id: number;
+  results: MovieVideo[];
+}
 const checkApiKey = () => {
   if (!TMDB_API_KEY) {
     throw new Error(
@@ -161,6 +174,32 @@ export const getMovieCast = async (
 
     throw new Error(
       `TMDB request failed: ${response.status}`
+    );
+  }
+
+  return response.json();
+};
+
+// Get videos/trailers for one movie
+export const getMovieVideos = async (
+  movieId: number
+): Promise<MovieVideoResponse> => {
+  checkApiKey();
+
+  const response = await fetch(
+    `${TMDB_BASE_URL}/movie/${movieId}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    console.error(
+      "TMDB Movie Videos Error:",
+      errorText
+    );
+
+    throw new Error(
+      `TMDB videos request failed: ${response.status}`
     );
   }
 
